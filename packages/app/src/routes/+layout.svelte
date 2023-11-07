@@ -1,0 +1,47 @@
+<script lang="ts">
+  import "../app.css";
+  import { taiko } from "../domain/chain";
+  import { foundry, mainnet, sepolia } from "viem/chains";
+  import { ethereumClient, sepoliaClient, web3Modal } from "../stores";
+  import { configureChains, createConfig } from "@wagmi/core";
+  import { EthereumClient, w3mConnectors, w3mProvider } from "@web3modal/ethereum";
+  import { Web3Modal } from "@web3modal/html";
+  import { onMount } from "svelte";
+  import { createPublicClient, http } from "viem";
+
+  const projectId = import.meta.env.VITE_WEB3MODAL_PROJECT_ID;
+  const chains = [mainnet, sepolia, foundry, taiko];
+
+  onMount(async () => {
+    const { publicClient } = configureChains(chains, [w3mProvider({ projectId })]);
+    const wagmiConfig = createConfig({
+      autoConnect: true,
+      connectors: w3mConnectors({ projectId, version: 1, chains }),
+      publicClient,
+    });
+
+    $ethereumClient = new EthereumClient(wagmiConfig, chains);
+    $web3Modal = new Web3Modal({ projectId, defaultChain: sepolia }, $ethereumClient);
+
+    // initialize viem clients
+    $sepoliaClient = createPublicClient({
+      chain: sepolia,
+      transport: http(),
+    });
+  });
+</script>
+
+<div class="container mx-auto">
+  <div class="navbar">
+    <div class="navbar-start">
+      <a href="/">Home</a>
+    </div>
+    <div class="navbar-end gap-2">
+      <a href="/another-page">Another page</a>
+      <w3m-network-switch />
+      <w3m-core-button balance="hide" icon="hide" />
+    </div>
+  </div>
+
+  <slot />
+</div>
